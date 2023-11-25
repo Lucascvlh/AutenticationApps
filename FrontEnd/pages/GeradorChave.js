@@ -7,7 +7,8 @@ export default function GeradorChave() {
 
     const fetchSistemas = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/sistemas');
+            const response = await axios.get('http://18.221.207.251:5000/sistemas');
+            console.log(response.data)
             setSistemas(response.data);
         } catch (error) {
             alert('Erro:', error);
@@ -27,7 +28,7 @@ export default function GeradorChave() {
 
     const atualizar_chave = async (id) => {
     try {
-        const response = await axios.put(`http://localhost:5000/atualizar-chave/${id}`);
+        const response = await axios.put(`http://18.221.207.251:5000/atualizar-chave/${id}`);
         const novaChave = response.data;
         // Atualizar o estado com a nova chave
         setSistemas(prevSistemas => {
@@ -45,7 +46,7 @@ export default function GeradorChave() {
 
     const handleNovoSistema = async () => {
         try {
-            const response = await axios.post('http://localhost:5000/cadastro-sistema', { nome: novoSistema });
+            const response = await axios.post('http://18.221.207.251:5000/cadastro-sistema', { nome: novoSistema });
             setNovoSistema(''); // Limpa o campo depois de adicionar o sistema
             fetchSistemas(); // Atualiza a lista de sistemas após adicionar o novo sistema
             alert(response.data.mensagem)
@@ -56,7 +57,7 @@ export default function GeradorChave() {
 
     const deletar_chave = async(id) =>{
         try{
-            const response = await axios.delete(`http://localhost:5000/deletar-sistema/${id}`);
+            const response = await axios.delete(`http://18.221.207.251:5000/deletar-sistema/${id}`);
             console.log(id)
             alert(response.data.mensagem); // Mensagem de sucesso ou erro
             // Atualizar a lista de sistemas após a exclusão, se necessário
