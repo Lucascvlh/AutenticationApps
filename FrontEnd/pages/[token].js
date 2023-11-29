@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Analytics } from '@vercel/analytics/react';
 import axios from 'axios';
 import { FaTrash, FaEye, FaSyncAlt, FaEyeSlash } from 'react-icons/fa';
 import { ImExit } from "react-icons/im";
@@ -92,7 +91,6 @@ export default function GeradorChave() {
     return (
         <div >
             <header className='header'>
-                <Analytics />
                 <h1 className='title'>Controle de chaves</h1>
                 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet"></link>
                 <button onClick={voltarParaHome}>
