@@ -22,8 +22,6 @@ export default function Home() {
       const formData = new FormData(form);
       const user = formData.get('user');
       const password = formData.get('password');
-      console.log(user)
-      console.log(password)
     try{
       const response = await axios.post('http://18.221.207.251:5000/autentication', {
         user,
