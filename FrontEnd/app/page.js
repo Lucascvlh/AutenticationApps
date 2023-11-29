@@ -22,7 +22,7 @@ export default function Home() {
       const user = formData.get('user');
       const password = formData.get('password');
     try{
-      const response = await fetch('http://localhost:5000/autentication', {
+      const response = await fetch('http://18.221.207.251:5000/autentication', {
       method: 'POST', // Alterado para POST
       headers: {
         'Content-Type': 'application/json',
