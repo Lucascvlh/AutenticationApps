@@ -26,11 +26,6 @@ export default function Home() {
       const response = await axios.post('http://18.221.207.251:5000/autentication', {
         user,
         password,
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
       });
         if (response.status === 200) {
           const data = await response.data
