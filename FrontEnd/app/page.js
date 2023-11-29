@@ -32,7 +32,6 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
-          "Access-Control-Allow-Headers": "Origin, X-Request-Width, Content-Type, Accept"
         },
       });
         if (response.status === 200) {
