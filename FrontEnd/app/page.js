@@ -1,94 +1,76 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+"use client"
+import { useState } from 'react';
+import styles from '../styles/page.module.css'
+import { CiLogin } from "react-icons/ci";
 
 export default function Home() {
+  const [user, setUser] = useState(''); // Estado para o campo de login
+  const [password, setPassword] = useState(''); // Estado para o campo de senha
+
+  const handleUserChange = (e) => {
+    setUser(e.target.value); // Atualiza o estado com o valor do campo de login
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value); // Atualiza o estado com o valor do campo de senha
+  };
+
+  const handleLoginSubmit = async (event) => {
+      event.preventDefault();
+      const form = document.getElementById('loginForm'); // substitua 'seuFormulario' pelo ID do seu formulário
+      const formData = new FormData(form);
+      const user = formData.get('user');
+      const password = formData.get('password');
+    try{
+      const response = await fetch('http://localhost:5000/autentication', {
+      method: 'POST', // Alterado para POST
+      headers: {
+        'Content-Type': 'application/json',
+      },
+        body: JSON.stringify({ user, password }),
+      });
+
+        if (response.ok) {
+          const data = await response.json()
+          const { token } = data
+          if (token){
+            localStorage.setItem('token', token)
+            window.location.href =`/${token}`
+          }
+          else{
+            alert('Token inválido!')
+          }
+        } else {
+          alert('Usuário ou senha inválida!')
+        }
+      } catch(e){
+        alert(e)
+      }
+    // Use 'login' e 'password' conforme necessário, por exemplo:
+    
+  }
   return (
     <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
+      <div className={styles.loginContainer}>
+        <form className={styles.loginForm} id='loginForm' onSubmit={handleLoginSubmit}>
+          <p>Usuário:</p>
+          <input
+            type="text"
+            name="user"
+            value={user}
+            onChange={handleUserChange}
+          />
+          <p>Senha:</p>
+          <input
+            type="password"
+            name="password"
+            value={password}
+            onChange={handlePasswordChange}
+          />
+          <button type='submit'><CiLogin/></button>
+        </form>
       </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
       <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
       </div>
     </main>
   )

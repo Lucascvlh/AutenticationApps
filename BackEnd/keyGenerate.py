@@ -1,111 +1,143 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from api.connectMongo import client
+from data.connection.connectMongo import client
 import secrets
 import hashlib
 import uuid
+import jwt
+from datetime import datetime, timedelta, timezone
 
 app = Flask(__name__)
 CORS(app)
-sistemas = []
 
 db = client['backend']
-collection = db['magalu']
+collection = db['MagaluAutentication']
+collectionLogs = db['Logs']
+collectionLogin = db['Users']
+
+def countedExe(router):
+    count ={
+        '_id': str(uuid.uuid4()),
+        'router': router,
+        'date': datetime.datetime.now().strftime("%Y-%m-%d"),
+        'hour': datetime.datetime.now().strftime("%H:%M:%S")
+    }
+
+    collectionLogs.insert_one(count)
+
+@app.route('/registerUser', methods=['POST'])
+def registerUser():
+    data = request.json
+    user = data['user']
+    password = data['password']
+
+    existUser = collectionLogin.find_one({'user': str(user).upper().strip()})
+    
+    if existUser:
+        return jsonify({'mensagem': 'Usuário já existente!'})
+    else:
+        newUser = {
+            '_id': str(uuid.uuid4()),
+            'user': str(user).upper().strip(),
+            'password': password,
+            'create_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'update_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        collectionLogin.insert_one(newUser)
+        return jsonify({'mensagem': 'Usuário cadastrado com sucesso.'})
+
+@app.route('/autentication', methods=['POST'])
+def autentication():
+    data = request.json
+    user = data['user']
+    password = data['password']
+    userLogon = collectionLogin.find_one({'user': str(user).upper().strip(), 'password': password})
+    if userLogon:
+        token = jwt.encode({'user': user, 'exp': datetime.now(timezone.utc) + timedelta(minutes=30)}, password)
+        return jsonify({'token': token}), 200
+    else:
+        return jsonify({'mensagem': 'Usuário inválida ou senha inválida'}), 403
 
 @app.route('/sistemas', methods=['GET'])
 def get_sistemas():
-    sistemas = list(collection.find({}))  # Obtém todos os sistemas da coleção 'magalu'
+    systems = list(collection.find({}))
+    for system in systems:
+        system['id'] = str(system['_id'])
+        del system['_id']
 
-    # Transforma o _id do MongoDB para id para o front-end
-    for sistema in sistemas:
-        sistema['id'] = str(sistema['_id'])
-        del sistema['_id']
-    
-    return jsonify(sistemas)
+    return jsonify(systems)
 
 @app.route('/cadastro-sistema', methods=['POST'])
-def cadastro_sistema():
-    dados = request.json
-    nome_recebido = dados['nome']
+def registerSystem():
+    data = request.json
+    receivedName = data['name']
 
-    sistema_existente = collection.find_one({'nome': nome_recebido})
+    existSystem = collection.find_one({'name': receivedName})
     
-    if sistema_existente:
-        # Sistema já existe, atualize os dados se necessário
-        # Supondo que você queira atualizar a chave e mostrar_chave
-        collection.update_one(
-            {'nome': nome_recebido},
-            {'$set': {'chave': gerar_chave(), 'mostrar_chave': False}}
-        )
-        return jsonify({'mensagem': 'Sistema atualizado com sucesso.'})
-    
-    # Se o sistema não existir, crie um novo
-    novo_id = str(uuid.uuid4())
-    novo_sistema = {
-        '_id': novo_id,
-        'nome': nome_recebido,
-        'chave': gerar_chave(),
-        'mostrar_chave': False
-    }
-    collection.insert_one(novo_sistema)
-
-    return jsonify({'mensagem': 'Sistema cadastrado com sucesso.'})
+    if existSystem:
+        return jsonify({'mensagem': 'Nome já existente!'})
+    else:
+        newSystem = {
+            '_id': str(uuid.uuid4()),
+            'name': receivedName,
+            'key': generatedKey(),
+            'showKey': False,
+            'create_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'update_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        collection.insert_one(newSystem)
+        return jsonify({'mensagem': 'Sistema cadastrado com sucesso.'})
 
 @app.route('/atualizar-chave/<string:sistema_id>', methods=['PUT'])
-def atualizar_chave(sistema_id):
-    chave_aleatoria = secrets.token_urlsafe(32)
-    chave_gerada = hashlib.sha256(chave_aleatoria.encode()).hexdigest()
+def updateKey(sistema_id):
+    keyRandom = secrets.token_urlsafe(32)
+    generatedKey = hashlib.sha256(keyRandom.encode()).hexdigest()
 
     # Atualiza o sistema com o ID fornecido
     result = collection.update_one(
         {'_id': sistema_id},
-        {'$set': {'chave': chave_gerada}}
+        {'$set': {'key': generatedKey,
+                  'update_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")}},
     )
-    
-    if result.modified_count > 0:
-        return chave_gerada  # Retorna a nova chave gerada se o documento foi atualizado
-    else:
-        return None  # Retorna None se o documento com o ID fornecido não foi encontrado
-        
-@app.route('/verificar-chave/<string:nome>/<chave>', methods=['POST'])
-def verificar_chave(nome, chave):
-    chave_recebida = chave
 
-    sistema = collection.find_one({'nome': nome, 'chave': chave_recebida})
+    if result.modified_count > 0:
+        return generatedKey 
+    else:
+        return None 
+        
+@app.route('/verificar-chave/<string:name>/<key>', methods=['POST'])
+def checkKey(name, key):
+    system = collection.find_one({'name': name, 'key': key})
     
-    if sistema:
+    if system:
+        countedExe('POST/Verificar')
         return jsonify({'mensagem': 'Validado'}), 200
     else:
         return jsonify({'mensagem': 'Chave inválida ou sistema não encontrado'}), 403
     
 @app.route('/gerar-chave', methods=['POST'])
-def gerar_chave():
-    total_documentos = collection.count_documents({})
+def generatedKey():
+    allDocuments = collection.count_documents({})
     
-    if total_documentos >= 0:
-        chave_aleatoria = secrets.token_urlsafe(32)
-        chave_gerada = hashlib.sha256(f"{total_documentos}-{chave_aleatoria}".encode()).hexdigest()
-        return chave_gerada
-
+    if allDocuments >= 0:
+        keyRandom = secrets.token_urlsafe(32)
+        generatedKey = hashlib.sha256(f"{allDocuments}-{keyRandom}".encode()).hexdigest()
+        return generatedKey
     return None
     
 @app.route('/deletar-sistema/<string:id>', methods=['DELETE'])
-def deletar_sistema(id):
-    db = client['backend']
-    collection = db['magalu']
-
-    sistema = collection.find_one({'_id': id})
-    
-    if sistema:
-        nome = sistema.get('nome', 'Nome não encontrado')  # Obtém o nome do sistema
+def deleteSystem(id):
+    system = collection.find_one({'_id': id})
+    if system:
+        name = system.get('name', 'nome não encontrado')  # Obtém o name do sistema
         result = collection.delete_one({'_id': id})
         if result.deleted_count > 0:
-            return jsonify({'mensagem': f'Sistema {nome} deletado com sucesso.'}), 200
+            return jsonify({'mensagem': f'Sistema {name} deletado com sucesso.'}), 200
         else:
-            return jsonify({'mensagem': f'Sistema {nome} não encontrado.'}), 404
+            return jsonify({'mensagem': f'Sistema {name} não encontrado.'}), 404
     else:
         return jsonify({'mensagem': f'Sistema com ID {id} não encontrado.'}), 404
-
+    
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0',debug=True )
