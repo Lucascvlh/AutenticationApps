@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import styles from '../styles/page.module.css'
 import { CiLogin } from "react-icons/ci";
+import axios from 'axios';
 
 export default function Home() {
   const [user, setUser] = useState(''); // Estado para o campo de login
@@ -21,17 +22,21 @@ export default function Home() {
       const formData = new FormData(form);
       const user = formData.get('user');
       const password = formData.get('password');
+      console.log(user)
+      console.log(password)
     try{
-      const response = await fetch('http://18.221.207.251:5000/autentication', {
-      method: 'POST', // Alterado para POST
-      headers: {
-        'Content-Type': 'application/json',
-      },
-        body: JSON.stringify({ user, password }),
+      const response = await axios.post('http://18.221.207.251:5000/autentication', {
+        user,
+        password,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          "Access-Control-Allow-Headers": "Origin, X-Request-Width, Content-Type, Accept"
+        },
       });
-
-        if (response.ok) {
-          const data = await response.json()
+        if (response.status === 200) {
+          const data = await response.data
           const { token } = data
           if (token){
             localStorage.setItem('token', token)
