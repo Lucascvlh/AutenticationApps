@@ -17,11 +17,12 @@ collectionLogin = db['Users']
 
 #Rotas dos Apps
 def countedExe(router):
+    fuso = timezone(timedelta(hours=-3))
     count ={
         '_id': str(uuid.uuid4()),
         'router': router,
-        'date': datetime.datetime.now().strftime("%Y-%m-%d"),
-        'hour': datetime.datetime.now().strftime("%H:%M:%S")
+        'date': datetime.now(fuso).strftime("%Y-%m-%d"),
+        'hour': datetime.now(fuso).strftime("%H:%M:%S")
     }
 
     collectionLogs.insert_one(count)
@@ -174,10 +175,11 @@ def autentication():
     userLogon = collectionLogin.find_one({'user': str(user).lower().strip(), 'password': password})
     if userLogon:
         token = jwt.encode({'user': user, 'exp': datetime.now(timezone.utc) + timedelta(minutes=30)}, password, algorithm='HS256')
-        return jsonify({'token': token}), 200
+        tokenString = token.decode('utf-8')
+        return jsonify({'token': tokenString}), 200
     else:
         return jsonify({'mensagem': 'Usuário inválida ou senha inválida'}), 403
 
 if __name__ == '__main__':
-    context = ('cert.pem', 'key.pem')
-    app.run(host='0.0.0.0',debug=True, ssl_context = context )
+
+    app.run(host='0.0.0.0',debug=True)

@@ -16,9 +16,11 @@ export default function GeradorChave() {
     const [validToken, setValidToken] = useState(false);
     const { token } = useRouter().query;
 
+    const ip = '3.133.154.252'
+
     const fetchSistemas = async () => {
         try {
-            const response = await axios.get(`https://18.221.207.251:5000/sistemas`);
+            const response = await axios.get(`https://${ip}:5000/sistemas`);
             setSistemas(response.data);
         } catch (error) {
             alert('Erro:', error);
@@ -27,7 +29,7 @@ export default function GeradorChave() {
 
     const fetchUser = async () => {
         try{
-            const response = await axios.get('https://18.221.207.251:5000/listUser')
+            const response = await axios.get(`https://${ip}:5000/listUser`)
             setNovoUser(response.data)
         }catch(error){
             console.log(error)
@@ -60,7 +62,7 @@ export default function GeradorChave() {
 
     const atualizar_chave = async (id) => {
     try {
-        const response = await axios.put(`https://18.221.207.251:5000/atualizar-chave/${id}`);
+        const response = await axios.put(`https://${ip}:5000/atualizar-chave/${id}`);
         const novaChave = response.data;
         setSistemas(prevSistemas => {
             return prevSistemas.map(sistema => {
@@ -77,7 +79,7 @@ export default function GeradorChave() {
 
     const handleNovoSistema = async () => {
         try {
-            const response = await axios.post('https://18.221.207.251:5000/cadastro-sistema', { name: novoSistema });
+            const response = await axios.post(`https://${ip}:5000/cadastro-sistema`, { name: novoSistema });
             setNovoSistema(''); 
             fetchSistemas(); 
             alert(response.data.mensagem)
@@ -93,7 +95,7 @@ export default function GeradorChave() {
         const nomeSistema = prompt(`Digite "${name.name}" do sistema para confirmar a exclusão:`);
         if (nomeSistema === name.name){
             try{
-                const response = await axios.delete(`https://18.221.207.251:5000/deletar-sistema/${id}`);
+                const response = await axios.delete(`https://${ip}:5000/deletar-sistema/${id}`);
                 alert(response.data.mensagem);
                 fetchSistemas();
             } catch(error){
@@ -120,7 +122,7 @@ export default function GeradorChave() {
         const user = document.getElementById('user').value;
         const password = document.getElementById('password').value;
         try{
-            const response = await axios.post('https://18.221.207.251:5000/registerUser', {
+            const response = await axios.post(`https://${ip}:5000/registerUser`, {
                 user,
                 password
             });
@@ -145,7 +147,7 @@ export default function GeradorChave() {
         const userToSave = novoUser.find(user => user.id === userId);
         try {
             // Chama a rota de atualização do usuário no backend
-            const response = await axios.put(`https://18.221.207.251:5000/updateUser/${userId}`, {
+            const response = await axios.put(`https://${ip}:5000/updateUser/${userId}`, {
                 user: userToSave.user,
                 password: userToSave.password
             });
@@ -193,7 +195,7 @@ export default function GeradorChave() {
 
     const deleteUser = async (userId) => {
         try {
-            const response = await axios.delete(`https://18.221.207.251:5000/deleteUser/${userId}`);
+            const response = await axios.delete(`https://${ip}:5000/deleteUser/${userId}`);
             alert(response.data.mensagem);
             fetchUser()
             // Aqui você pode adicionar lógica para atualizar a interface após a exclusão

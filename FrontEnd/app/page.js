@@ -4,10 +4,10 @@ import { CiLogin } from "react-icons/ci";
 import styles from '../styles/page.module.css'
 import axios from 'axios';
 
+
 export default function Home() {
   const [user, setUser] = useState(''); // Estado para o campo de login
   const [password, setPassword] = useState(''); // Estado para o campo de senha
-
   const handleUserChange = (e) => {
     setUser(e.target.value); // Atualiza o estado com o valor do campo de login
   };
@@ -17,6 +17,7 @@ export default function Home() {
   };
 
   const handleLoginSubmit = async (event) => {
+      const ip = '3.133.154.252'
       event.preventDefault();
       const form = document.getElementById('loginForm');
       const formData = new FormData(form);
@@ -36,7 +37,7 @@ export default function Home() {
         }
       }else{
         try{
-          const response = await axios.post('https://18.221.207.251:5000/autentication', {
+          const response = await axios.post(`https://${ip}:5000/autentication`, {
             user,
             password,
           }, {
