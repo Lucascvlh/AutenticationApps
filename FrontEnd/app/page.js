@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react';
-import styles from '../styles/page.module.css'
 import { CiLogin } from "react-icons/ci";
+import styles from '../styles/page.module.css'
 import axios from 'axios';
 
 export default function Home() {
@@ -18,38 +18,52 @@ export default function Home() {
 
   const handleLoginSubmit = async (event) => {
       event.preventDefault();
-      const form = document.getElementById('loginForm'); // substitua 'seuFormulario' pelo ID do seu formulário
+      const form = document.getElementById('loginForm');
       const formData = new FormData(form);
       const user = formData.get('user');
       const password = formData.get('password');
-    try{
-      const response = await axios.post('http://18.221.207.251:5000/autentication', {
-        user,
-        password,
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-      });
-        if (response.status === 200) {
-          const data = await response.data
-          const { token } = data
-          if (token){
-            localStorage.setItem('token', token)
-            window.location.href =`/${token}`
-          }
-          else{
-            alert('Token inválido!')
-          }
-        } else {
-          alert('Usuário ou senha inválida!')
+      const userField = document.getElementById('userField');
+      const passwordField = document.getElementById('passwordField');
+      userField.classList.remove(styles.errorBorder);
+      passwordField.classList.remove(styles.errorBorder);
+      if (user === '' || password === ''){
+        alert('Preencha os dados corretamente.')
+        if (user === '') {
+          userField.classList.add(styles.errorBorder);
         }
-      } catch(e){
-        alert(e)
+        if (password === '') {
+          passwordField.classList.add(styles.errorBorder);
+        }
+      }else{
+        try{
+          const response = await axios.post('https://18.221.207.251:5000/autentication', {
+            user,
+            password,
+          }, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            },
+          });
+            if (response.status === 200) {
+              const data = await response.data
+              const { token } = data
+              if (token){
+                localStorage.setItem('token', token)
+                window.location.href =`/${token}`
+              }
+              else{
+                alert('Token inválido!')
+              }
+            }
+            userField.classList.remove(styles.errorBorder);
+            passwordField.classList.remove(styles.errorBorder);
+          } catch{
+            userField.classList.add(styles.errorBorder);
+            passwordField.classList.add(styles.errorBorder);
+            alert('Login ou senha inválido.')
+          }        
       }
-    // Use 'login' e 'password' conforme necessário, por exemplo:
-    
   }
   return (
     <main className={styles.main}>
@@ -57,6 +71,7 @@ export default function Home() {
         <form className={styles.loginForm} id='loginForm' onSubmit={handleLoginSubmit}>
           <p>Usuário:</p>
           <input
+            id="userField"
             type="text"
             name="user"
             value={user}
@@ -64,6 +79,7 @@ export default function Home() {
           />
           <p>Senha:</p>
           <input
+            id="passwordField"
             type="password"
             name="password"
             value={password}

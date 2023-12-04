@@ -15,6 +15,7 @@ collection = db['MagaluAutentication']
 collectionLogs = db['Logs']
 collectionLogin = db['Users']
 
+#Rotas dos Apps
 def countedExe(router):
     count ={
         '_id': str(uuid.uuid4()),
@@ -24,39 +25,6 @@ def countedExe(router):
     }
 
     collectionLogs.insert_one(count)
-
-@app.route('/registerUser', methods=['POST'])
-def registerUser():
-    data = request.json
-    user = data['user']
-    password = data['password']
-
-    existUser = collectionLogin.find_one({'user': str(user).upper().strip()})
-    
-    if existUser:
-        return jsonify({'mensagem': 'Usuário já existente!'})
-    else:
-        newUser = {
-            '_id': str(uuid.uuid4()),
-            'user': str(user).upper().strip(),
-            'password': password,
-            'create_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            'update_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        collectionLogin.insert_one(newUser)
-        return jsonify({'mensagem': 'Usuário cadastrado com sucesso.'})
-
-@app.route('/autentication', methods=['POST'])
-def autentication():
-    data = request.json
-    user = data['user']
-    password = data['password']
-    userLogon = collectionLogin.find_one({'user': str(user).upper().strip(), 'password': password})
-    if userLogon:
-        token = jwt.encode({'user': user, 'exp': datetime.now(timezone.utc) + timedelta(minutes=30)}, password)
-        return jsonify({'token': token}), 200
-    else:
-        return jsonify({'mensagem': 'Usuário inválida ou senha inválida'}), 403
 
 @app.route('/sistemas', methods=['GET'])
 def get_sistemas():
@@ -138,6 +106,79 @@ def deleteSystem(id):
     else:
         return jsonify({'mensagem': f'Sistema com ID {id} não encontrado.'}), 404
     
+#Rotas do usuário
+@app.route('/registerUser', methods=['POST'])
+def registerUser():
+    data = request.json
+    user = data['user']
+    password = data['password']
+
+    existUser = collectionLogin.find_one({'user': str(user).upper().strip()})
+    
+    if existUser:
+        return jsonify({'mensagem': 'Usuário já existente!'})
+    else:
+        newUser = {
+            '_id': str(uuid.uuid4()),
+            'user': str(user).lower().strip(),
+            'password': password,
+            'create_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'update_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        collectionLogin.insert_one(newUser)
+        return jsonify({'mensagem': 'Usuário cadastrado com sucesso.'})
+    
+@app.route('/listUser', methods=['GET'])
+def listUser():
+    users = list(collectionLogin.find({}))
+    for user in users:
+        user['id'] = str(user['_id'])
+        del user['_id']
+    return jsonify(users)
+
+@app.route('/updateUser/<string:id>', methods=['PUT'])
+def updateUser(id):
+    data = request.json
+    user = data['user']
+    password = data['password']
+    current_user = collectionLogin.find_one({'_id': id})
+    if user is not None and user != current_user['user']:
+        existing_user = collectionLogin.find_one({'user': str(user).lower().strip()})
+        if existing_user:
+            return jsonify({}), 400
+        collectionLogin.update_one({'_id': id}, {'$set': {'user': str(user).lower().strip()}})
+
+    if password is not None and password != current_user['password']:
+        collectionLogin.update_one({'_id': id}, {'$set': {'password': password}})
+
+    return jsonify({'message': 'Usuário atualizado com sucesso.'}), 200
+    
+@app.route('/deleteUser/<string:id>', methods=['DELETE'])
+def deleteUser(id):
+    user = collectionLogin.find_one({'_id': id})
+    if user:
+        name = user.get('user', 'Usuário não encontrado')  # Obtém o nome do usuário
+        result = collectionLogin.delete_one({'_id': id})
+        if result.deleted_count > 0:
+            return jsonify({'mensagem': f'Usuário {name} deletado com sucesso.'}), 200
+        else:
+            return jsonify({'mensagem': f'Nenhum usuário encontrado para exclusão.'}), 404
+    else:
+        return jsonify({'mensagem': f'Usuário com ID {id} não encontrado.'}), 404
+    
+@app.route('/autentication', methods=['POST'])
+def autentication():
+    data = request.json
+    user = data['user']
+    password = data['password']
+    userLogon = collectionLogin.find_one({'user': str(user).lower().strip(), 'password': password})
+    if userLogon:
+        token = jwt.encode({'user': user, 'exp': datetime.now(timezone.utc) + timedelta(minutes=30)}, password, algorithm='HS256')
+        return jsonify({'token': token}), 200
+    else:
+        return jsonify({'mensagem': 'Usuário inválida ou senha inválida'}), 403
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',debug=True )
